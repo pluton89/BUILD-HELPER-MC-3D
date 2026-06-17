@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft HTML5 Builder - Version Complète</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            font-family: 'Press Start 2P', monospace;
+            background-color: #1a1a1a;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .page { display: none; width: 100%; height: 100%; }
+        .page.active { display: flex; flex-direction: column; }
+
+        #page-home {
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('https://www.minecraft.net/content/dam/games/minecraft/key-art/Games_Subnav_Minecraft-Vanilla.jpg') center/cover;
+            justify-content: center; align-items: center; text-align: center; gap: 30px;
+            padding: 20px;
+        }
+
+        .title-container h1 { font-size: 3.5rem; color: #ffaa00; text-shadow: 4px 4px #000; margin-bottom: 5px; }
+        
+        .discord-tag {
+            font-size: 11px;
+            color: #5865F2;
+            text-shadow: 2px 2px #000;
+            background: rgba(0,0,0,0.4);
+            padding: 8px 15px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 15px;
+            border: 2px dashed #5865F2;
+        }
+
+        .description-text {
+            font-size: 10px;
+            line-height: 1.8;
+            color: #dddddd;
+            max-width: 600px;
+            text-shadow: 2px 2px #000;
+            margin: 0 auto 20px auto;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border: 4px solid #3c3c3c;
+        }
+
+        /* --- BOUTONS --- */
+        .mc-btn {
+            background-color: #8c8c8c;
+            border: 4px solid;
+            border-color: #dbdbdb #555555 #555555 #dbdbdb;
+            color: #e0e0e0;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            padding: 12px 20px;
+            cursor: pointer;
+            text-shadow: 2px 2px #2a2a2a;
+            box-shadow: 0 5px #000;
+        }
+        .mc-btn:hover { background-color: #7ca1bf; border-color: #b3d1ec #425c73 #425c73 #b3d1ec; color: #ffffa0; }
+        .mc-btn:active { transform: translateY(2px); box-shadow: 0 3px #000; }
+        .mc-btn.active-mode { background-color: #4a6f22; border-color: #73aa33 #2b4013 #2b4013 #73aa33; color: #fff; }
+        .mc-btn-danger { background-color: #a03c3c; border-color: #db7878 #551c1c #551c1c #db7878; }
+        .mc-btn-success { background-color: #3ca03c; border-color: #78db78 #1c551c #1c551c #78db78; }
+        .mc-btn-sky { background-color: #2c8ca4; border-color: #64cbdc #144b58 #144b58 #64cbdc; }
+
+        .mc-btn.selected-plot {
+            background-color: #3b5998;
+            border-color: #5b7ac3 #1b2a4a #1b2a4a #5b7ac3;
+            color: #fff;
+        }
+
+        #game-container { position: relative; width: 100%; height: 100%; }
+        
+        #canvas-container { 
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; 
+            background-color: #4a80ff; cursor: crosshair;
+            z-index: 1;
+        }
+
+        .top-bar {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 8px; z-index: 100;
+            background: rgba(0, 0, 0, 0.6); padding: 10px; border: 4px solid #3c3c3c; box-shadow: 0 4px #000;
+            flex-wrap: wrap; justify-content: center; max-width: 95vw;
+        }
+        .top-bar .mc-btn { font-size: 8px; padding: 8px 10px; }
+
+        .stats-hud {
+            position: absolute; top: 120px; left: 20px; z-index: 100;
+            background: rgba(0, 0, 0, 0.75); border: 3px solid #3c3c3c;
+            padding: 15px; font-size: 8px; line-height: 1.8; width: 240px;
+        }
+
+        .plot-modal {
+            display: none;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 200; background: rgba(26, 26, 26, 0.95); border: 4px solid #4a6f22;
+            padding: 25px; width: 380px; text-align: center; box-shadow: 0 10px #000;
+        }
+        .plot-modal h2 { font-size: 11px; color: #ffaa00; margin-bottom: 8px; text-shadow: 2px 2px #000; }
+        .plot-modal p { font-size: 7px; color: #aaa; margin-bottom: 15px; }
+        .plot-modal .plots-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
+
+        .hotbar-container {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 100; display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+        .hotbar { display: flex; background-color: #8f8f8f; border: 4px solid #3c3c3c; padding: 2px; }
+        .slot {
+            width: 55px; height: 55px; background-color: #8b8b8b; border: 4px solid;
+            border-color: #373737 #dbdbdb #dbdbdb #373737; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer;
+        }
+        .slot.selected { border-color: #ffffff #555555 #555555 #ffffff; background-color: #a4a4a4; outline: 4px solid #fff; outline-offset: -4px; }
+    </style>
+</head>
+<body>
+
+    <div id="page-home" class="page active">
+        <div class="title-container">
+            <h1>ARCHITECTE 3D</h1>
+            <div class="discord-tag">💬 Discord : @plutoniumroar</div>
+        </div>
+        
+        <div class="description-text">
+            Cet outil est un laboratoire de construction Minecraft en 3D interactif.<br><br>
+            <span style="color: #ffaa00;">CONTROLES CAMERA STYLE BLENDER :</span><br>
+            • Tourner : Clic Molette ou Clic Droit<br>
+            • Se Déplacer (Pan) : SHIFT + Clic Molette (ou Clic Droit)<br>
+            • Zoomer : Molette de la souris
+        </div>
+
+        <button class="mc-btn" style="font-size: 16px; padding: 20px 50px;" onclick="navigateTo('game')">CONSTRUIRE 🏗️</button>
+    </div>
+
+    <div id="page-game" class="page">
+        <div id="game-container">
+            
+            <div class="top-bar">
+                <button id="btn-mode-build" class="mc-btn active-mode" onclick="setMode('build')">⛏️ POSER</button>
+                <button id="btn-mode-delete" class="mc-btn" onclick="setMode('delete')">❌ RETIRER</button>
+                <button id="btn-mode-cam" class="mc-btn" onclick="setMode('cam')">🎥 CAMÉRA LIBRE</button>
+                <button class="mc-btn mc-btn-sky" onclick="openPlotModal()">📐 TAILLE</button>
+                <button class="mc-btn mc-btn-sky" onclick="openPlatformModal()">🌍 TERRAIN</button>
+                <button class="mc-btn mc-btn-success" onclick="saveProject()">💾 SAUVER</button>
+                <button class="mc-btn mc-btn-success" onclick="loadProject()">📂 CHARGER</button>
+                <button class="mc-btn" onclick="navigateTo('home')">🏠 MENU</button>
+                <button class="mc-btn mc-btn-danger" onclick="clearAllBlocks()">🗑️ RESET</button>
+                <button id="btn-toggle-labels" class="mc-btn" onclick="toggleLabels()">👁️ MASQUER MESURES</button>
+            </div>
+
+            <div id="plot-modal" class="plot-modal">
+                <h2>📐 TAILLE DE LA PARCELLE</h2>
+                <p>⚠️ Changer réinitialisera les blocs actuels sur le terrain.</p>
+                <div class="plots-list">
+                    <button id="plot-30" class="mc-btn selected-plot" onclick="selectPlotSizeStage(30)">PETITE (30x30)</button>
+                    <button id="plot-60" class="mc-btn" onclick="selectPlotSizeStage(60)">MOYENNE (60x60)</button>
+                    <button id="plot-100" class="mc-btn" onclick="selectPlotSizeStage(100)">GRANDE (100x100)</button>
+                    <button id="plot-200" class="mc-btn" onclick="selectPlotSizeStage(200)">ÉNORME (200x200)</button>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button class="mc-btn mc-btn-success" style="font-size: 9px;" onclick="confirmPlotSize()">CONFIRMER</button>
+                    <button class="mc-btn mc-btn-danger" style="font-size: 9px;" onclick="togglePlotModal(false)">ANNULER</button>
+                </div>
+            </div>
+
+            <div id="platform-modal" class="plot-modal">
+                <h2>🌍 TYPE DE PLATEFORME</h2>
+                <div class="plots-list">
+                    <button class="mc-btn" onclick="changePlatformType('grass')">🟩 PLAINE (HERBE)</button>
+                    <button class="mc-btn" onclick="changePlatformType('desert')">🟨 DÉSERT (SABLE)</button>
+                    <button class="mc-btn" onclick="changePlatformType('nether')">🟥 NETHER (ROCHE ROUGE)</button>
+                    <button class="mc-btn" onclick="changePlatformType('space')">⬛ END / ESPACE (OBSIDIENNE)</button>
+                </div>
+                <button class="mc-btn mc-btn-danger" style="font-size: 9px;" onclick="togglePlatformModal(false)">FERMER</button>
+            </div>
+
+            <div class="stats-hud">
+                <div style="color: #ffaa00; margin-bottom: 5px; text-align: center;">📊 PLAN DU BUILD</div>
+                Style : <span id="hud-platform" style="color:#dfb15b;">PLAINE</span><br>
+                Taille : <span id="hud-plot-size" style="color:#dfb15b;">30x30</span><br>
+                Total Blocs : <span id="total-blocks-count" style="color: #55ff55;">0</span><br>
+                <hr style="border: 1px solid #3c3c3c; margin: 5px 0;">
+                <span style="color: #3ccbee;">🔵 Bleu :</span> Longueurs (X/Z)<br>
+                <span style="color: #ff3c3c;">🔴 Rouge :</span> Hauteurs (Y)<br>
+                <span style="color: #aaaaaa; font-size:7px; display:block; margin-top:5px;">💡 Shift + Molette pour déplacer la caméra</span>
+            </div>
+
+            <div id="canvas-container"></div>
+
+            <div class="hotbar-container">
+                <div class="hotbar">
+                    <div class="slot selected" id="slot-stone" onclick="selectBlock('stone')">🧱</div>
+                    <div class="slot" id="slot-wood" onclick="selectBlock('wood')">🪵</div>
+                    <div class="slot" id="slot-nether" onclick="selectBlock('nether')">🔴</div>
+                    <div class="slot" id="slot-gold" onclick="selectBlock('gold')">🪙</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Système de caméra OrbitControls avancé style Blender (Orbit + Pan avec SHIFT)
+        THREE.OrbitControls = function ( camera, domElement ) {
+            this.camera = camera; this.domElement = domElement; this.target = new THREE.Vector3();
+            
+            let scope = this; 
+            let mouseStart = new THREE.Vector2(); 
+            let mouseEnd = new THREE.Vector2();
+            let mouseDelta = new THREE.Vector2(); 
+            
+            let spherical = { radius: 45, phi: Math.PI / 3, theta: Math.PI / 4 };
+            let isPanning = false;
+
+            function applySpherical() {
+                let offset = new THREE.Vector3();
+                offset.setFromSphericalCoords(spherical.radius, spherical.phi, spherical.theta);
+                camera.position.copy(scope.target).add(offset); 
+                camera.lookAt(scope.target);
+            }
+            
+            this.update = function () { applySpherical(); };
+            
+            function onPointerMove(e) {
+                mouseEnd.set(e.clientX, e.clientY);
+                mouseDelta.subVectors(mouseEnd, mouseStart);
+                
+                if (isPanning) {
+                    // Calcul du déplacement latéral de la cible (Pan caméra comme Blender)
+                    let factor = spherical.radius * 0.0015;
+                    let vecX = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0).normalize().multiplyScalar(-mouseDelta.x * factor);
+                    let vecY = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1).normalize().multiplyScalar(mouseDelta.y * factor);
+                    
+                    // Empêcher la caméra de s'enfoncer sous la terre
+                    scope.target.add(vecX).add(vecY);
+                    if(scope.target.y < 0) scope.target.y = 0;
+                } else {
+                    // Rotation classique autour du point ciblé
+                    spherical.theta -= mouseDelta.x * 0.005; 
+                    spherical.phi -= mouseDelta.y * 0.005;
+                    spherical.phi = Math.max(0.05, Math.min(Math.PI / 2 - 0.05, spherical.phi));
+                }
+                
+                mouseStart.copy(mouseEnd); 
+                applySpherical();
+            }
+            
+            function onPointerUp() { 
+                domElement.removeEventListener('pointermove', onPointerMove); 
+                domElement.removeEventListener('pointerup', onPointerUp); 
+            }
+            
+            domElement.addEventListener('pointerdown', function (e) {
+                if (e.button === 1 || e.button === 2 || currentMode === 'cam') {
+                    // Blender utilise Shift + Clic Milieu pour déplacer la cible librement (Pan)
+                    isPanning = e.shiftKey;
+                    mouseStart.set(e.clientX, e.clientY); 
+                    domElement.addEventListener('pointermove', onPointerMove); 
+                    domElement.addEventListener('pointerup', onPointerUp);
+                }
+            });
+            
+            domElement.addEventListener('wheel', function (e) {
+                if (e.deltaY > 0) spherical.radius *= 1.05; else spherical.radius /= 1.05;
+                spherical.radius = Math.max(5, Math.min(600, spherical.radius)); 
+                applySpherical();
+            });
+        };
+
+        let currentPlotSize = 30; 
+        let stagedPlotSize = 30;
+        let currentMode = 'build';
+        let selectedBlockType = 'stone';
+        let currentPlatformStyle = 'grass';
+
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 3000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.9); 
+        scene.add(ambientLight);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        scene.add(sunLight);
+
+        let gridHelper = null;
+        let floorPlane = null;
+        let objects = []; 
+        let labelsArray = [];
+        let labelsVisible = true;
+
+        const blockGeo = new THREE.BoxGeometry(1, 1, 1);
+        const materials = {
+            stone: new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.9 }),
+            wood: new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.9 }),
+            nether: new THREE.MeshStandardMaterial({ color: 0x5a1818, roughness: 0.9 }),
+            gold: new THREE.MeshStandardMaterial({ color: 0xe6b800, roughness: 0.3 })
+        };
+
+        const platformStyles = {
+            grass:  { name: 'PLAINE',  skyColor: 0x4a80ff, floorColor: 0x5c8e32 },
+            desert: { name: 'DÉSERT',  skyColor: 0xffe599, floorColor: 0xdfc475 },
+            nether: { name: 'NETHER',  skyColor: 0x2b0505, floorColor: 0x612424 },
+            space:  { name: 'ESPACE',  skyColor: 0x0a0a14, floorColor: 0x221929 }
+        };
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function updateWorldPlot(size) {
+            if (gridHelper) scene.remove(gridHelper);
+            if (floorPlane) scene.remove(floorPlane);
+
+            const style = platformStyles[currentPlatformStyle];
+            scene.background = new THREE.Color(style.skyColor);
+            document.getElementById('hud-platform').innerText = style.name;
+            document.getElementById('hud-plot-size').innerText = `${size}x${size}`;
+
+            sunLight.position.set(size, size * 1.5, size / 2); 
+
+            gridHelper = new THREE.GridHelper(size, size, 0x000000, 0x333333);
+            gridHelper.position.set(size / 2, 0.01, size / 2);
+            scene.add(gridHelper);
+
+            const floorGeo = new THREE.BoxGeometry(size, 1, size);
+            floorPlane = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({ color: style.floorColor, roughness: 0.9 }));
+            floorPlane.position.set(size / 2, -0.5, size / 2);
+            scene.add(floorPlane);
+
+            if(objects.length === 0) objects.push(floorPlane); else objects[0] = floorPlane; 
+
+            controls.target.set(size / 2, 0, size / 2);
+            controls.update();
+        }
+
+        /* --- FENETRES MODALES --- */
+        function togglePlotModal(show) { document.getElementById('plot-modal').style.display = show ? 'block' : 'none'; }
+        function openPlotModal() { stagedPlotSize = currentPlotSize; selectPlotSizeStage(stagedPlotSize); togglePlotModal(true); }
+        function selectPlotSizeStage(size) {
+            stagedPlotSize = size;
+            document.querySelectorAll('.plots-list .mc-btn').forEach(btn => btn.classList.remove('selected-plot'));
+            if(document.getElementById(`plot-${size}`)) document.getElementById(`plot-${size}`).classList.add('selected-plot');
+        }
+        function confirmPlotSize() {
+            currentPlotSize = stagedPlotSize;
+            clearAllBlocks(); 
+            updateWorldPlot(currentPlotSize);
+            togglePlotModal(false);
+        }
+
+        function togglePlatformModal(show) { document.getElementById('platform-modal').style.display = show ? 'block' : 'none'; }
+        function openPlatformModal() { togglePlatformModal(true); }
+        function changePlatformType(type) {
+            currentPlatformStyle = type;
+            updateWorldPlot(currentPlotSize);
+            togglePlatformModal(false);
+        }
+
+        /* --- JEU --- */
+        function navigateTo(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(`page-${pageId}`).classList.add('active');
+            if (pageId === 'game') {
+                setTimeout(() => { onWindowResize(); updateWorldPlot(currentPlotSize); }, 50);
+            }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.top-bar .mc-btn').forEach(btn => btn.classList.remove('active-mode'));
+            document.getElementById(`btn-mode-${mode}`).classList.add('active-mode');
+        }
+
+        function selectBlock(type) {
+            selectedBlockType = type;
+            document.querySelectorAll('.hotbar .slot').forEach(slot => slot.classList.remove('selected'));
+            document.getElementById(`slot-${type}`).classList.add('selected');
+            if(currentMode === 'cam') setMode('build'); 
+        }
+
+        function clearLabels() {
+            labelsArray.forEach(lbl => scene.remove(lbl));
+            labelsArray = [];
+        }
+
+        function createCanvasLabel(text, x, y, z, colorHex) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.font = 'bold 70px monospace';
+            ctx.fillStyle = colorHex; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.strokeStyle = '#000000'; ctx.lineWidth = 12;
+            ctx.strokeText(text, 64, 64); ctx.fillText(text, 64, 64);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMaterial = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.position.set(x, y + 0.5, z);
+            sprite.scale.set(1.5, 1.5, 1);
+            sprite.visible = labelsVisible;
+            scene.add(sprite);
+            labelsArray.push(sprite);
+        }
+
+        function calculateLinesAndLabels() {
+            clearLabels();
+            if (objects.length <= 1) return;
+
+            const blocksMap = {};
+            const placedBlocks = [];
+
+            for (let i = 1; i < objects.length; i++) {
+                const b = objects[i];
+                const key = `${Math.floor(b.position.x)},${Math.floor(b.position.y)},${Math.floor(b.position.z)}`;
+                blocksMap[key] = true;
+                placedBlocks.push({
+                    x: Math.floor(b.position.x), y: Math.floor(b.position.y), z: Math.floor(b.position.z),
+                    processedX: false, processedY: false, processedZ: false
+                });
+            }
+
+            // AXE X
+            placedBlocks.forEach(b => {
+                if (!b.processedX) {
+                    let r = 0; while (blocksMap[`${b.x + r + 1},${b.y},${b.z}`]) r++;
+                    let l = 0; while (blocksMap[`${b.x - l - 1},${b.y},${b.z}`]) l++;
+                    let len = l + 1 + r;
+                    if (len > 1) {
+                        for (let lx = 0; lx < len; lx++) {
+                            let m = placedBlocks.find(pb => pb.x === (b.x - l + lx) && pb.y === b.y && pb.z === b.z);
+                            if (m) m.processedX = true;
+                        }
+                        createCanvasLabel(len.toString(), (b.x - l) + (len - 1) / 2 + 0.5, b.y + 0.7, b.z + 0.5, '#3ccbee');
+                    }
+                }
+            });
+
+            // AXE Z
+            placedBlocks.forEach(b => {
+                if (!b.processedZ) {
+                    let f = 0; while (blocksMap[`${b.x},${b.y},${b.z + f + 1}`]) f++;
+                    let bck = 0; while (blocksMap[`${b.x},${b.y},${b.z - bck - 1}`]) bck++;
+                    let len = bck + 1 + f;
+                    if (len > 1) {
+                        for (let lz = 0; lz < len; lz++) {
+                            let m = placedBlocks.find(pb => pb.x === b.x && pb.y === b.y && pb.z === (b.z - bck + lz));
+                            if (m) m.processedZ = true;
+                        }
+                        createCanvasLabel(len.toString(), b.x + 0.5, b.y + 0.7, (b.z - bck) + (len - 1) / 2 + 0.5, '#3ccbee');
+                    }
+                }
+            });
+
+            // AXE Y
+            placedBlocks.forEach(b => {
+                if (!b.processedY) {
+                    let u = 0; while (blocksMap[`${b.x},${b.y + u + 1},${b.z}`]) u++;
+                    let d = 0; while (blocksMap[`${b.x},${b.y - d - 1},${b.z}`]) d++;
+                    let len = d + 1 + u;
+                    if (len > 1) {
+                        for (let ly = 0; ly < len; ly++) {
+                            let m = placedBlocks.find(pb => pb.x === b.x && pb.y === (b.y - d + ly) && pb.z === b.z);
+                            if (m) m.processedY = true;
+                        }
+                        createCanvasLabel(len.toString(), b.x + 1.1, (b.y - d) + (len - 1) / 2 + 0.5, b.z + 0.5, '#ff3c3c');
+                    }
+                }
+            });
+        }
+
+        // SYSTEME DE POSE ET RETRAIT SUR LE CLIC GAUCHE UNIQUEMENT
+        window.addEventListener('pointerdown', function(event) {
+            // SECURITÉ TOTAL BLENDER : Si on clique molette (1), clic droit (2) ou si SHIFT est pressé, interdiction de modifier les blocs !
+            if (event.button === 1 || event.button === 2 || event.shiftKey) return;
+            
+            if (currentMode === 'cam' || document.getElementById('platform-modal').style.display === 'block' || document.getElementById('plot-modal').style.display === 'block') return;
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            if (event.clientY < rect.top || event.clientY > rect.bottom || event.clientX < rect.left || event.clientX > rect.right) return;
+
+            mouse.x = ((event.clientX - rect.left) / renderer.domElement.clientWidth) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / renderer.domElement.clientHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(objects);
+
+            if (intersects.length > 0) {
+                const intersect = intersects[0];
+
+                if (currentMode === 'build') {
+                    const block = new THREE.Mesh(blockGeo, materials[selectedBlockType]);
+                    block.nameType = selectedBlockType;
+                    
+                    const targetPosition = new THREE.Vector3().copy(intersect.point).add(intersect.face.normal.clone().multiplyScalar(0.5));
+                    block.position.x = Math.floor(targetPosition.x) + 0.5;
+                    block.position.y = Math.floor(targetPosition.y) + 0.5;
+                    block.position.z = Math.floor(targetPosition.z) + 0.5;
+                    
+                    if (block.position.y >= 0 && block.position.x >= 0 && block.position.x <= currentPlotSize && block.position.z >= 0 && block.position.z <= currentPlotSize) {
+                        scene.add(block);
+                        objects.push(block);
+                        document.getElementById('total-blocks-count').innerText = objects.length - 1;
+                        calculateLinesAndLabels();
+                    }
+                } 
+                else if (currentMode === 'delete' && intersect.object !== floorPlane) {
+                    scene.remove(intersect.object);
+                    objects.splice(objects.indexOf(intersect.object), 1);
+                    document.getElementById('total-blocks-count').innerText = objects.length - 1;
+                    calculateLinesAndLabels();
+                }
+            }
+        });
+
+        function toggleLabels() {
+            labelsVisible = !labelsVisible;
+
+            labelsArray.forEach(label => {
+                label.visible = labelsVisible;
+            });
+
+            document.getElementById('btn-toggle-labels').innerText =
+                labelsVisible
+                ? '👁️ MASQUER MESURES'
+                : '👁️ AFFICHER MESURES';
+        }
+
+        function clearAllBlocks() {
+            while(objects.length > 1) scene.remove(objects.pop());
+            document.getElementById('total-blocks-count').innerText = 0;
+            clearLabels();
+        }
+
+        function saveProject() {
+            const saveObject = { style: currentPlatformStyle, plotSize: currentPlotSize, blocks: [] };
+            for (let i = 1; i < objects.length; i++) {
+                const b = objects[i];
+                saveObject.blocks.push({ x: b.position.x, y: b.position.y, z: b.position.z, type: b.nameType });
+            }
+            localStorage.setItem('minecraft_complete_save', JSON.stringify(saveObject));
+            alert("Sauvegarde réussie ! 💾");
+        }
+
+        function loadProject() {
+            const savedData = localStorage.getItem('minecraft_complete_save');
+            if (!savedData) { alert("Aucune sauvegarde trouvée."); return; }
+            const payload = JSON.parse(savedData);
+            currentPlatformStyle = payload.style || 'grass';
+            currentPlotSize = payload.plotSize || 30;
+            clearAllBlocks();
+            updateWorldPlot(currentPlotSize);
+            payload.blocks.forEach(data => {
+                const block = new THREE.Mesh(blockGeo, materials[data.type]);
+                block.nameType = data.type;
+                block.position.set(data.x, data.y, data.z);
+                scene.add(block);
+                objects.push(block);
+            });
+            document.getElementById('total-blocks-count').innerText = objects.length - 1;
+            calculateLinesAndLabels();
+            alert("Projet chargé ! 📂");
+        }
+
+        document.oncontextmenu = function(e) { e.preventDefault(); }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', onWindowResize);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        updateWorldPlot(currentPlotSize);
+        animate();
+    </script>
+</body>
+</html>
