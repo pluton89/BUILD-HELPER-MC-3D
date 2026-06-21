@@ -3,151 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft HTML5 Builder - Prévisualisation</title>
+    <title>Architecte 3D - Builder Pro</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap');
 
         * { box-sizing: border-box; user-select: none; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Press Start 2P', monospace; background-color: #1a1a1a; color: #fff; overflow: hidden; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #1a1a1a; color: #fff; overflow: hidden; }
         
+        /* Polices d'écriture */
+        .font-retro { font-family: 'Press Start 2P', monospace; }
+        .font-modern { font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
         .page { display: none; width: 100%; height: 100%; }
         .page.active { display: flex; flex-direction: column; }
         
+        /* Écran d'accueil */
         #page-home { 
-            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('https://www.minecraft.net/content/dam/games/minecraft/key-art/Games_Subnav_Minecraft-Vanilla.jpg') center/cover; 
+            background: linear-gradient(rgba(15, 20, 30, 0.8), rgba(10, 15, 25, 0.9)), url('https://www.minecraft.net/content/dam/games/minecraft/key-art/Games_Subnav_Minecraft-Vanilla.jpg') center/cover; 
             justify-content: center; align-items: center; text-align: center; gap: 30px; padding: 20px; 
         }
         
-        .title-container h1 { font-size: 3rem; color: #ffaa00; text-shadow: 4px 4px #000; margin-bottom: 20px; }
-        .description-text { font-size: 10px; line-height: 1.8; color: #dddddd; max-width: 600px; text-shadow: 2px 2px #000; margin: 0 auto 20px auto; background: rgba(0, 0, 0, 0.7); padding: 20px; border: 4px solid #3c3c3c; }
+        .title-container h1 { font-size: 4rem; color: #ffaa00; text-shadow: 0 6px 0 #8b5a00, 0 10px 20px rgba(0,0,0,0.8); margin-bottom: 20px; letter-spacing: 2px; }
+        .description-text { font-size: 14px; line-height: 2; color: #e0e0e0; max-width: 650px; background: rgba(20, 25, 35, 0.6); padding: 30px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); box-shadow: 0 15px 30px rgba(0,0,0,0.5); }
         
-        .mc-btn { background-color: #8c8c8c; border: 4px solid; border-color: #dbdbdb #555555 #555555 #dbdbdb; color: #e0e0e0; font-family: 'Press Start 2P', monospace; font-size: 11px; padding: 12px 20px; cursor: pointer; text-shadow: 2px 2px #2a2a2a; box-shadow: 0 5px #000; }
-        .mc-btn:hover { background-color: #7ca1bf; border-color: #b3d1ec #425c73 #425c73 #b3d1ec; color: #ffffa0; }
-        .mc-btn:active { transform: translateY(2px); box-shadow: 0 3px #000; }
-        .mc-btn.active-mode { background-color: #4a6f22; border-color: #73aa33 #2b4013 #2b4013 #73aa33; color: #fff; }
-        .mc-btn-danger { background-color: #a03c3c; border-color: #db7878 #551c1c #551c1c #db7878; }
-        .mc-btn-success { background-color: #3ca03c; border-color: #78db78 #1c551c #1c551c #78db78; }
-        .mc-btn-sky { background-color: #2c8ca4; border-color: #64cbdc #144b58 #144b58 #64cbdc; }
-
+        /* Boutons de navigation */
+        .mc-btn { 
+            background-color: #4a4a4a; border: 2px solid #666; border-radius: 6px; color: #fff; 
+            font-weight: 600; padding: 10px 18px; cursor: pointer; transition: all 0.2s ease;
+            box-shadow: 0 4px 0 #2a2a2a, 0 8px 15px rgba(0,0,0,0.3); text-transform: uppercase; letter-spacing: 1px;
+        }
+        .mc-btn:hover { background-color: #5c5c5c; border-color: #888; transform: translateY(-2px); box-shadow: 0 6px 0 #2a2a2a, 0 12px 20px rgba(0,0,0,0.4); }
+        .mc-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #2a2a2a; }
+        
+        .btn-large { font-size: 18px; padding: 20px 60px; background-color: #3ca03c; border-color: #5cd05c; box-shadow: 0 6px 0 #1c551c; }
+        .btn-large:hover { background-color: #4cd04c; box-shadow: 0 8px 0 #1c551c; }
+        
+        /* Interface de construction (Moderne) */
         #game-container { position: relative; width: 100%; height: 100%; }
-        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #4a80ff; cursor: crosshair; z-index: 1; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair; z-index: 1; }
         
-        .top-bar { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 100; flex-wrap: wrap; justify-content: center; max-width: 95vw; }
-        .top-bar .mc-btn { font-size: 8px; padding: 8px 10px; box-shadow: 0 3px #000; }
+        .ui-panel { position: absolute; z-index: 100; display: flex; gap: 10px; flex-wrap: wrap; }
+        .top-left-bar { top: 20px; left: 20px; }
+        .top-right-bar { top: 20px; right: 20px; justify-content: flex-end; }
         
-        .stats-hud { position: absolute; top: 120px; left: 20px; z-index: 100; background: rgba(0, 0, 0, 0.75); border: 3px solid #3c3c3c; padding: 15px; font-size: 8px; line-height: 1.8; width: 250px; }
+        .ui-panel .mc-btn { font-size: 12px; padding: 8px 14px; background: rgba(30, 35, 45, 0.85); border-color: rgba(255,255,255,0.2); backdrop-filter: blur(5px); }
+        .ui-panel .mc-btn:hover { background: rgba(50, 60, 75, 0.95); }
         
-        .plot-modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 200; background: rgba(26, 26, 26, 0.95); border: 4px solid #4a6f22; padding: 25px; width: 380px; text-align: center; box-shadow: 0 10px #000; }
-        .plots-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
+        .btn-danger { color: #ff6b6b; }
+        .btn-success { color: #69db7c; }
+        .btn-sky { color: #4dabf7; }
 
-        .hotbar-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .hotbar { display: flex; background-color: #8f8f8f; border: 4px solid #3c3c3c; padding: 2px; gap: 2px; }
+        /* HUD Statistiques */
+        .stats-hud { 
+            position: absolute; top: 80px; left: 20px; z-index: 100; 
+            background: rgba(15, 20, 25, 0.7); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px; font-size: 13px; line-height: 2; width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .stats-hud .label { color: #adb5bd; font-weight: 600; }
+        .stats-hud .value { float: right; font-weight: 800; }
+        
+        .stats-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 10px 0; }
+        .controls-hint { margin-top: 15px; color: #868e96; font-size: 11px; line-height: 1.5; font-weight: 400; }
+
+        /* Boîtes de dialogue (Modals) */
+        .plot-modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 200; background: rgba(20, 25, 30, 0.95); border: 2px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 30px; width: 400px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.7); backdrop-filter: blur(10px); }
+        .plot-modal h2 { margin-top: 0; color: #fff; font-size: 18px; margin-bottom: 25px; }
+        .plots-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px; }
+
+        /* Inventaire / Barre de choix (Hotbar) */
+        .hotbar-container { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; }
+        .hotbar { display: flex; background: rgba(15, 20, 25, 0.85); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); padding: 8px; gap: 8px; backdrop-filter: blur(10px); box-shadow: 0 15px 30px rgba(0,0,0,0.6); }
         
         .slot { 
-            width: 65px; height: 65px; background-color: #8b8b8b; border: 4px solid; border-color: #373737 #dbdbdb #dbdbdb #373737; 
-            display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden;
+            width: 70px; height: 70px; background-color: rgba(45, 45, 45, 0.85); border: 3px solid #3c3c3c; border-radius: 6px;
+            display: flex; align-items: flex-end; justify-content: center; cursor: pointer; position: relative; transition: all 0.15s;
+            background-repeat: no-repeat; background-position: center; background-size: 46px 46px; image-rendering: pixelated;
         }
-        .slot canvas { position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; image-rendering: pixelated; z-index: 1; }
-        .slot.selected { border-color: #ffffff #555555 #555555 #ffffff; background-color: #a4a4a4; outline: 4px solid #fff; outline-offset: -4px; }
+        .slot:hover { background-color: rgba(65, 65, 65, 0.9); border-color: #ffffff; }
+        .slot.selected { border-color: #69db7c; background-color: rgba(55, 65, 55, 0.9); box-shadow: inset 0 0 10px rgba(105, 219, 124, 0.4); }
         
-        .slot-label { position: absolute; bottom: 2px; left: 0; right: 0; text-align: center; font-size: 6px; color: #fff; text-shadow: 1px 1px #000; background: rgba(0,0,0,0.6); padding: 2px 0; z-index: 2; pointer-events: none; }
+        .slot-label { 
+            position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: #fff; 
+            background: rgba(0,0,0,0.85); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15);
+            opacity: 0; pointer-events: none; transition: opacity 0.15s; white-space: nowrap; z-index: 10;
+        }
+        .slot:hover .slot-label { opacity: 1; }
 
+        /* Écran de chargement */
         #loading-screen {
             display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #141414; background-image: radial-gradient(#2c2c2c 20%, transparent 20%), radial-gradient(#2c2c2c 20%, transparent 20%);
-            background-size: 16px 16px; background-position: 0 0, 8px 8px;
-            z-index: 500; justify-content: center; align-items: center; flex-direction: column; gap: 30px;
+            background-color: #0f141e; z-index: 500; justify-content: center; align-items: center; flex-direction: column; gap: 20px;
         }
-        .loading-title { font-size: 16px; color: #fff; text-shadow: 2px 2px #000; letter-spacing: 2px; }
-        .loading-bar-border { width: 320px; height: 24px; background-color: #4a4a4a; border: 4px solid #fff; padding: 2px; box-shadow: 0 4px #000; }
-        .loading-bar-fill { width: 0%; height: 100%; background-color: #ffaa00; transition: width 0.1s linear; }
-        .loading-status { font-size: 10px; color: #aaa; text-shadow: 1px 1px #000; }
+        .loading-title { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 2px; }
+        .loading-bar-border { width: 400px; height: 12px; background-color: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; }
+        .loading-bar-fill { width: 0%; height: 100%; background-color: #69db7c; transition: width 0.1s ease; box-shadow: 0 0 10px #69db7c; }
+        .loading-status { font-size: 12px; color: #adb5bd; }
     </style>
 </head>
-<body>
+<body class="font-modern">
 
-    <div id="page-home" class="page active">
+    <div id="page-home" class="page active font-retro">
         <div class="title-container">
             <h1>ARCHITECTE 3D</h1>
         </div>
-        <div class="description-text">
-            Laboratoire de construction Minecraft 3D interactif.<br><br>
-            <span style="color: #ffaa00;">CONTRÔLES CAMÉRA :</span><br>
-            • Tourner : Cliquer/Glisser Molette ou Clic Droit (hors blocs)<br>
+        <div class="description-text font-modern">
+            <h3 style="color:#ffaa00; margin-top:0;">CONTRÔLES CAMÉRA</h3>
+            • Tourner : Clic Gauche / Glisser Molette<br>
             • Glisser (Pan) : SHIFT + Molette enfoncée<br>
             • Zoomer : Molette souris<br><br>
-            <span style="color: #ffaa00;">ACTIONS RAPIDES :</span><br>
+            <h3 style="color:#ffaa00;">ACTIONS RAPIDES</h3>
+            • Placer un bloc : Clic Gauche<br>
             • Supprimer un bloc : Clic Droit direct sur le bloc<br>
-            • Hauteur de placement libre : SHIFT + Molette souris
+            • Hauteur libre : SHIFT + Molette souris
         </div>
-        <button class="mc-btn" style="font-size: 16px; padding: 20px 50px;" onclick="navigateTo('game')">CONSTRUIRE 🏗️</button>
+        <button class="mc-btn font-retro btn-large" onclick="navigateTo('game')">CONSTRUIRE 🏗️</button>
     </div>
 
     <div id="page-game" class="page">
         <div id="game-container">
             
             <div id="loading-screen">
-                <div class="loading-title" id="loading-title-text">SAUVEGARDE EN COURS...</div>
-                <div class="loading-bar-border">
-                    <div class="loading-bar-fill" id="loading-bar-fill"></div>
-                </div>
-                <div class="loading-status" id="loading-status-text">Génération du monde...</div>
+                <div class="loading-title" id="loading-title-text">SAUVEGARDE...</div>
+                <div class="loading-bar-border"><div class="loading-bar-fill" id="loading-bar-fill"></div></div>
+                <div class="loading-status" id="loading-status-text">Calcul des blocs...</div>
             </div>
 
-            <div class="top-bar">
-                <button class="mc-btn mc-btn-sky" onclick="openPlotModal()">📐 TAILLE</button>
-                <button class="mc-btn mc-btn-sky" onclick="openPlatformModal()">🌍 TERRAIN</button>
-                <button class="mc-btn mc-btn-success" onclick="triggerMinecraftLoading('save')">💾 SAUVER</button>
-                <button class="mc-btn mc-btn-success" onclick="triggerMinecraftLoading('load')">📂 CHARGER</button>
-                <button class="mc-btn" onclick="navigateTo('home')">🏠 MENU</button>
-                <button class="mc-btn mc-btn-danger" onclick="clearAllBlocks()">🗑️ RESET</button>
+            <div class="ui-panel top-left-bar">
+                <button class="mc-btn btn-sky" onclick="openPlotModal()">📐 Dimensions Terrain</button>
+                <button class="mc-btn btn-sky" onclick="openPlatformModal()">🌍 Type de Sol</button>
+                <button class="mc-btn" onclick="navigateTo('home')">🏠 Quitter</button>
+            </div>
+
+            <div class="ui-panel top-right-bar">
+                <button class="mc-btn btn-success" onclick="triggerMinecraftLoading('save')">💾 Sauvegarder</button>
+                <button class="mc-btn btn-success" onclick="triggerMinecraftLoading('load')">📂 Charger</button>
+                <button class="mc-btn btn-danger" onclick="clearAllBlocks()">🗑️ Tout Effacer</button>
             </div>
 
             <div id="plot-modal" class="plot-modal">
-                <h2>📐 TAILLE DE LA PARCELLE</h2>
+                <h2>Taille de la parcelle</h2>
                 <div class="plots-list">
-                    <button id="plot-30" class="mc-btn" onclick="selectPlotSizeStage(30)">PETITE (30x30)</button>
-                    <button id="plot-60" class="mc-btn" onclick="selectPlotSizeStage(60)">MOYENNE (60x60)</button>
-                    <button id="plot-100" class="mc-btn" onclick="selectPlotSizeStage(100)">GRANDE (100x100)</button>
-                    <button id="plot-200" class="mc-btn" onclick="selectPlotSizeStage(200)">ÉNORME (200x200)</button>
+                    <button class="mc-btn" onclick="selectPlotSizeStage(30)">Petite (30x30)</button>
+                    <button class="mc-btn" onclick="selectPlotSizeStage(60)">Moyenne (60x60)</button>
+                    <button class="mc-btn" onclick="selectPlotSizeStage(100)">Grande (100x100)</button>
                 </div>
-                <button class="mc-btn mc-btn-success" onclick="confirmPlotSize()">CONFIRMER</button>
+                <button class="mc-btn btn-success" style="width:100%; margin-top:10px;" onclick="confirmPlotSize()">Valider</button>
             </div>
 
             <div id="platform-modal" class="plot-modal">
-                <h2>🌍 TYPE DE PLATEFORME</h2>
+                <h2>Environnement</h2>
                 <div class="plots-list">
-                    <button class="mc-btn" onclick="changePlatformType('grass')">🟩 PLAINE</button>
-                    <button class="mc-btn" onclick="changePlatformType('desert')">🟨 DÉSERT</button>
-                    <button class="mc-btn" onclick="changePlatformType('nether')">🟥 NETHER</button>
-                    <button class="mc-btn" onclick="changePlatformType('deep')">🟦 DEEP DARK</button>
+                    <button class="mc-btn" onclick="changePlatformType('grass')">🟩 Plaine</button>
+                    <button class="mc-btn" onclick="changePlatformType('desert')">🟨 Désert</button>
+                    <button class="mc-btn" onclick="changePlatformType('nether')">🟥 Nether</button>
+                    <button class="mc-btn" onclick="changePlatformType('deep')">🟦 Deep Dark</button>
                 </div>
             </div>
 
             <div class="stats-hud">
-                Terrain : <span id="hud-platform">PLAINE</span><br>
-                Taille : <span id="hud-plot-size">30x30</span><br>
-                Total Blocs : <span id="total-blocks-count">0</span><br>
-                Longueur : <span id="hud-length-count" style="color: #4a80ff;">0 bloc(s)</span><br>
-                Hauteur : <span id="hud-height-count" style="color: #ff3c3c;">0 bloc(s)</span><br>
-                Rotation : <span id="hud-rotation" style="color: #ffaa00;">0° (Nord)</span><br>
-                Ajustement H. : <span id="hud-height-offset" style="color: #00ffcc;">0</span><br>
-                <span style="color:#aaaaaa; font-size:7px;">💡 [R] Pivoter | [SHIFT + Molette] Ajuster Hauteur | [Clic Droit] Supprimer bloc</span>
+                <div><span class="label">Environnement</span> <span class="value" id="hud-platform">Plaine</span></div>
+                <div><span class="label">Superficie</span> <span class="value" id="hud-plot-size">30x30</span></div>
+                <div class="stats-divider"></div>
+                <div><span class="label">Total Blocs</span> <span class="value" id="total-blocks-count">0</span></div>
+                <div class="stats-divider"></div>
+                <div><span class="label">Orientation</span> <span class="value" style="color: #ffaa00;" id="hud-rotation">0° (Nord)</span></div>
+                <div><span class="label">Niveau (Y)</span> <span class="value" style="color: #00ffcc;" id="hud-height-offset">0</span></div>
+                
+                <div class="controls-hint">
+                    <strong>[R]</strong> Pivoter le bloc<br>
+                    <strong>[SHIFT + Molette]</strong> Élevage du niveau de pose
+                </div>
             </div>
 
             <div id="canvas-container"></div>
 
             <div class="hotbar-container">
                 <div class="hotbar">
-                    <div class="slot selected" id="slot-stone" onclick="selectBlock('stone')"><span class="slot-label">Roche</span></div>
-                    <div class="slot" id="slot-wood" onclick="selectBlock('wood')"><span class="slot-label">Bois</span></div>
-                    <div class="slot" id="slot-stairs" onclick="selectBlock('stairs')"><span class="slot-label">Escalier</span></div>
-                    <div class="slot" id="slot-slab" onclick="selectBlock('slab')"><span class="slot-label">Dalle</span></div>
-                    <div class="slot" id="slot-fence" onclick="selectBlock('fence')"><span class="slot-label">Barrière</span></div>
-                    <div class="slot" id="slot-door" onclick="selectBlock('door')"><span class="slot-label">Porte</span></div>
+                    <div class="slot selected" id="slot-stone" onclick="selectBlock('stone')"><span class="slot-label">Pierre Cassée</span></div>
+                    <div class="slot" id="slot-wood" onclick="selectBlock('wood')"><span class="slot-label">Planches de Bois</span></div>
+                    <div class="slot" id="slot-stairs" onclick="selectBlock('stairs')"><span class="slot-label">Escalier en Bois</span></div>
+                    <div class="slot" id="slot-slab" onclick="selectBlock('slab')"><span class="slot-label">Dalle de Pierre</span></div>
+                    <div class="slot" id="slot-fence" onclick="selectBlock('fence')"><span class="slot-label">Barrière en Bois</span></div>
+                    <div class="slot" id="slot-door" onclick="selectBlock('door')"><span class="slot-label">Porte en Bois</span></div>
                 </div>
             </div>
 
@@ -155,37 +195,86 @@
     </div>
 
     <script>
+        // --- CONFIGURATION INITIALE ---
         let freeHeightOffset = 0;
-        let currentPlotSize = 30; let stagedPlotSize = 30; let currentMode = 'build'; let selectedBlockType = 'stone'; let currentPlatformStyle = 'grass';
+        let currentPlotSize = 30; let stagedPlotSize = 30; 
+        let currentMode = 'build'; let selectedBlockType = 'stone'; let currentPlatformStyle = 'grass';
         let lastMoveEvent = null;
+        let currentRotationState = 0;
+        const rotationLabels = ["0° (Nord)", "90° (Est)", "180° (Sud)", "270° (Ouest)"];
 
-        function generateMinecraftTexture(type) {
+        // --- GÉNÉRATEUR DE TEXTURES MC OFFICIELLES & ICÔNES ---
+        function generateMinecraftTexture(type, isIcon = false) {
             const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
             const ctx = canvas.getContext('2d');
+            
+            const cWood = { base: '#b58656', dark: '#7d5431', mid: '#896038', light: '#c69869' };
+            const cSlab = { base: '#959595', dark: '#555555', mid: '#737373', light: '#bcbcbc' };
+
+            // TEXTURE COBBLESTONE (Pierre Cassée)
             if (type === 'stone') {
-                ctx.fillStyle = '#737373'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#616161'; 
-                [[1,2],[4,1],[7,5],[2,9],[10,3],[13,2],[11,8],[5,12],[12,13]].forEach(p => ctx.fillRect(p[0], p[1], 1, 1));
-                ctx.fillStyle = '#8a8a8a'; [[2,2],[5,3],[9,2],[1,7],[6,8],[12,4],[14,12]].forEach(p => ctx.fillRect(p[0], p[1], 1, 1));
-            } else if (type === 'slab') {
-                ctx.fillStyle = '#959595'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#555555'; ctx.strokeRect(0,0,16,16); ctx.fillRect(0,8,16,1);
-                ctx.fillStyle = '#bcbcbc'; ctx.fillRect(1,1,14,1); ctx.fillRect(1,9,14,1);
-            } else if (type === 'wood') {
-                ctx.fillStyle = '#b58656'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#896038'; ctx.fillRect(0,3,16,1); ctx.fillRect(0,7,16,1); ctx.fillRect(0,11,16,1);
-                ctx.fillStyle = '#c69869'; ctx.fillRect(2,1,4,1); ctx.fillRect(10,5,5,1);
-            } else if (type === 'door') {
-                ctx.fillStyle = '#ab7a4e'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#5c3e21'; ctx.strokeRect(1,1,14,14); ctx.fillRect(3,3,3,4); ctx.fillRect(10,3,3,4);
-                ctx.fillStyle = '#2c1e11'; ctx.fillRect(13,8,2,1);
-            } else if (type === 'fence') {
-                ctx.fillStyle = '#a06e42'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#6d4522'; ctx.fillRect(0,2,16,3); ctx.fillRect(0,11,16,3);
+                ctx.fillStyle = '#3c3c3c'; // Mortier sombre (fissures)
+                ctx.fillRect(0,0,16,16);
+                
+                // Position, largeur et hauteur des blocs de pierre (x, y, w, h)
+                const stones = [
+                    [0,0,5,4], [6,0,6,5], [13,0,3,3],
+                    [0,5,4,5], [5,6,7,5], [13,4,3,6],
+                    [0,11,6,5], [7,12,6,4], [14,11,2,5]
+                ];
+                
+                stones.forEach(s => {
+                    ctx.fillStyle = '#737373'; ctx.fillRect(s[0], s[1], s[2], s[3]); // Base de la pierre
+                    ctx.fillStyle = '#9a9a9a'; ctx.fillRect(s[0], s[1], s[2], 1); ctx.fillRect(s[0], s[1], 1, s[3]); // Lumière
+                    ctx.fillStyle = '#555555'; ctx.fillRect(s[0], s[1]+s[3]-1, s[2], 1); ctx.fillRect(s[0]+s[2]-1, s[1], 1, s[3]); // Ombre
+                });
+            } 
+            else if (type === 'wood' || (!isIcon && (type === 'stairs' || type === 'fence'))) {
+                ctx.fillStyle = cWood.base; ctx.fillRect(0,0,16,16);
+                ctx.fillStyle = cWood.dark;
+                ctx.fillRect(0,0,16,1); ctx.fillRect(0,4,16,1); ctx.fillRect(0,8,16,1); ctx.fillRect(0,12,16,1);
+                ctx.fillRect(4,0,1,4); ctx.fillRect(12,4,1,4); ctx.fillRect(8,8,1,4); ctx.fillRect(2,12,1,4);
+                ctx.fillStyle = cWood.light;
+                ctx.fillRect(0,1,16,1); ctx.fillRect(0,5,16,1); ctx.fillRect(0,9,16,1); ctx.fillRect(0,13,16,1);
+                ctx.fillStyle = cWood.dark; ctx.fillRect(5,0,1,4); ctx.fillRect(13,4,1,4);
             }
+            else if (type === 'slab') {
+                ctx.fillStyle = cSlab.base; ctx.fillRect(0,0,16,16);
+                ctx.fillStyle = cSlab.dark; ctx.strokeRect(0,0,16,16); ctx.fillRect(0,8,16,1);
+                ctx.fillStyle = cSlab.light; ctx.fillRect(1,1,14,1); ctx.fillRect(1,9,14,1);
+            }
+            else if (type === 'stairs' && isIcon) {
+                ctx.fillStyle = cWood.base;
+                for(let i=0; i<4; i++) { ctx.fillRect(2 + i*3, 14 - i*3, 14 - i*3, 3); }
+                ctx.fillStyle = cWood.dark;
+                ctx.fillRect(2,14,12,1); ctx.fillRect(5,11,9,1); ctx.fillRect(8,8,6,1); ctx.fillRect(11,5,3,1);
+            }
+            else if (type === 'fence' && isIcon) {
+                ctx.fillStyle = cWood.base;
+                ctx.fillRect(3,2,3,12); ctx.fillRect(10,2,3,12); ctx.fillRect(6,4,4,2); ctx.fillRect(6,9,4,2);
+                ctx.fillStyle = cWood.dark;
+                ctx.fillRect(5,2,1,12); ctx.fillRect(12,2,1,12); ctx.fillRect(6,5,4,1); ctx.fillRect(6,10,4,1);
+            }
+            else if (type === 'door') {
+                ctx.fillStyle = cWood.base; ctx.fillRect(2,1,12,15);
+                ctx.fillStyle = cWood.dark; ctx.strokeRect(2,1,12,15);
+                ctx.fillStyle = '#4a3319';
+                ctx.fillRect(4,3,3,4); ctx.fillRect(9,3,3,4); ctx.fillRect(4,9,3,5); ctx.fillRect(9,9,3,5);
+                ctx.fillStyle = '#d4af37'; ctx.fillRect(12,8,1,2);
+            }
+            
             const tex = new THREE.CanvasTexture(canvas);
             tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
-            return { material: new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }), canvas: canvas };
+            return { material: new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 }), canvas: canvas };
         }
 
         const textures = {
-            stone: generateMinecraftTexture('stone'), wood: generateMinecraftTexture('wood'),
-            slab: generateMinecraftTexture('slab'), door: generateMinecraftTexture('door'), fence: generateMinecraftTexture('fence')
+            stone: generateMinecraftTexture('stone', false), wood: generateMinecraftTexture('wood', false),
+            slab: generateMinecraftTexture('slab', false), door: generateMinecraftTexture('door', false), 
+            fence: generateMinecraftTexture('fence', false), stairs: generateMinecraftTexture('wood', false),
+            stoneIcon: generateMinecraftTexture('stone', true), woodIcon: generateMinecraftTexture('wood', true),
+            slabIcon: generateMinecraftTexture('slab', true), stairsIcon: generateMinecraftTexture('stairs', true),
+            fenceIcon: generateMinecraftTexture('fence', true), doorIcon: generateMinecraftTexture('door', true)
         };
 
         const materials = {
@@ -193,28 +282,43 @@
             slab: textures.slab.material, fence: textures.fence.material, door: textures.door.material
         };
 
-        const previewMaterial = new THREE.MeshBasicMaterial({ color: 0x55ff55, transparent: true, opacity: 0.45 });
+        const previewMaterial = new THREE.MeshBasicMaterial({ color: 0x69db7c, transparent: true, opacity: 0.4 });
 
-        window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('slot-stone').appendChild(textures.stone.canvas.cloneNode(true));
-            document.getElementById('slot-wood').appendChild(textures.wood.canvas.cloneNode(true));
-            document.getElementById('slot-stairs').appendChild(textures.wood.canvas.cloneNode(true));
-            document.getElementById('slot-slab').appendChild(textures.slab.canvas.cloneNode(true));
-            document.getElementById('slot-fence').appendChild(textures.fence.canvas.cloneNode(true));
-            document.getElementById('slot-door').appendChild(textures.door.canvas.cloneNode(true));
-        });
+        function renderHotbarIcons() {
+            ['stone', 'wood', 'stairs', 'slab', 'fence', 'door'].forEach(t => {
+                const slot = document.getElementById(`slot-${t}`);
+                if (slot) {
+                    const dataUrl = textures[t + 'Icon'].canvas.toDataURL();
+                    slot.style.backgroundImage = `url(${dataUrl})`;
+                }
+            });
+        }
 
-        let currentRotationState = 0;
-        const rotationLabels = ["0° (Nord)", "90° (Est)", "180° (Sud)", "270° (Ouest)"];
+        // --- GESTION DU RENDERER 3D ---
+        const container = document.getElementById('canvas-container'); 
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 4000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight); 
+        container.appendChild(renderer.domElement);
 
-        window.addEventListener('keydown', function(e) {
-            if (e.key.toLowerCase() === 'r') {
-                currentRotationState = (currentRotationState + 1) % 4;
-                document.getElementById('hud-rotation').innerText = rotationLabels[currentRotationState];
-                if (previewMesh) previewMesh.rotation.y = currentRotationState * (Math.PI / 2);
-            }
-        });
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.75); scene.add(ambientLight);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 0.55); 
+        sunLight.position.set(60, 120, 30); scene.add(sunLight);
 
+        let gridHelper = null; let floorPlane = null; let objects = []; let previewMesh = null;
+        let measurementSprites = [];
+
+        const platformStyles = {
+            grass:  { name: 'Plaine',    skyColor: 0x87CEEB, floorColor: 0x5c8e32 },
+            desert: { name: 'Désert',    skyColor: 0xffe599, floorColor: 0xdfc475 },
+            nether: { name: 'Nether',    skyColor: 0x3d0c0c, floorColor: 0x4a1818 },
+            deep:   { name: 'Deep Dark', skyColor: 0x050f1a, floorColor: 0x0a1b2b }
+        };
+
+        const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2();
+
+        // --- CONTROLES CAMERA STRUCTURES ---
         THREE.OrbitControls = function ( camera, domElement ) {
             this.camera = camera; this.domElement = domElement; this.target = new THREE.Vector3();
             let scope = this; let mouseStart = new THREE.Vector2(); let mouseEnd = new THREE.Vector2(); let mouseDelta = new THREE.Vector2(); 
@@ -225,6 +329,7 @@
                 camera.position.copy(scope.target).add(offset); camera.lookAt(scope.target);
             }
             this.update = function () { applySpherical(); };
+            
             function onPointerMove(e) {
                 mouseEnd.set(e.clientX, e.clientY); mouseDelta.subVectors(mouseEnd, mouseStart);
                 if (isPanning) {
@@ -238,13 +343,16 @@
                 }
                 mouseStart.copy(mouseEnd); applySpherical();
             }
+            
             function onPointerUp() { domElement.removeEventListener('pointermove', onPointerMove); domElement.removeEventListener('pointerup', onPointerUp); }
+            
             domElement.addEventListener('pointerdown', function (e) {
-                if (e.button === 1 || (e.button === 2 && currentMode === 'cam')) {
+                if (e.button === 1 || (e.button === 0 && !getIntersectedBlock(e))) {
                     isPanning = e.shiftKey; mouseStart.set(e.clientX, e.clientY); 
                     domElement.addEventListener('pointermove', onPointerMove); domElement.addEventListener('pointerup', onPointerUp);
                 }
             });
+            
             domElement.addEventListener('wheel', function (e) {
                 if (e.shiftKey) {
                     e.preventDefault();
@@ -257,59 +365,114 @@
                 spherical.radius = Math.max(5, Math.min(600, spherical.radius)); applySpherical();
             }, { passive: false });
         };
-
-        const container = document.getElementById('canvas-container'); const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 4000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight); container.appendChild(renderer.domElement);
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); scene.add(ambientLight);
-        const sunLight = new THREE.DirectionalLight(0xffffff, 0.5); scene.add(sunLight);
-
-        let gridHelper = null; let floorPlane = null; let objects = []; let previewMesh = null;
-        const platformStyles = {
-            grass:  { name: 'PLAINE',    skyColor: 0x4a80ff, floorColor: 0x5c8e32 },
-            desert: { name: 'DÉSERT',    skyColor: 0xffe599, floorColor: 0xdfc475 },
-            nether: { name: 'NETHER',    skyColor: 0x220505, floorColor: 0x722525 },
-            deep:   { name: 'DEEP DARK', skyColor: 0x020a14, floorColor: 0x091c2c }
-        };
-
-        const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2();
-
-        function updateDimensionsHUD() {
-            if (objects.length <= 1) {
-                document.getElementById('hud-length-count').innerText = "0 bloc(s)";
-                document.getElementById('hud-height-count').innerText = "0 bloc(s)";
-                return;
-            }
-            let minX = Infinity, maxX = -Infinity;
-            let minZ = Infinity, maxZ = -Infinity;
-            let minY = Infinity, maxY = -Infinity;
-
-            for (let i = 1; i < objects.length; i++) {
-                let pos = objects[i].position;
-                if (pos.x < minX) minX = pos.x; if (pos.x > maxX) maxX = pos.x;
-                if (pos.z < minZ) minZ = pos.z; if (pos.z > maxZ) maxZ = pos.z;
-                if (pos.y < minY) minY = pos.y; if (pos.y > maxY) maxY = pos.y;
-            }
-
-            let longueur = Math.round((maxX - minX) + 1);
-            let hauteur = 0;
-
-            if (minY !== Infinity && maxY !== Infinity) {
-                hauteur = Math.round((maxY - minY) + 1);
-            }
-
-            document.getElementById('hud-length-count').innerText = `${longueur} bloc(s)`;
-            document.getElementById('hud-height-count').innerText = `${hauteur} bloc(s)`;
+        function getIntersectedBlock(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / renderer.domElement.clientWidth) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / renderer.domElement.clientHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(objects, true);
+            return intersects.length > 0 ? intersects[0] : null;
         }
 
+        window.addEventListener('keydown', function(e) {
+            if (e.key.toLowerCase() === 'r') {
+                currentRotationState = (currentRotationState + 1) % 4;
+                document.getElementById('hud-rotation').innerText = rotationLabels[currentRotationState];
+                if (previewMesh) previewMesh.rotation.y = currentRotationState * (Math.PI / 2);
+            }
+        });
+
+        // --- ALGORITHME DE COMPTAGE DÉCALÉ ET CENTRÉ ---
+        function createTextSprite(text, color) {
+            const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
+            canvas.width = 128; canvas.height = 128;
+            context.font = "bold 64px 'Inter', sans-serif";
+            context.textAlign = "center"; context.textBaseline = "middle";
+            
+            context.shadowColor = "black"; context.shadowBlur = 8;
+            context.lineWidth = 7; context.strokeStyle = "black";
+            context.strokeText(text, 64, 64);
+            
+            context.shadowBlur = 0; context.fillStyle = color;
+            context.fillText(text, 64, 64);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMaterial = new THREE.SpriteMaterial({ map: texture, depthTest: false, depthWrite: false });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.scale.set(1.4, 1.4, 1); sprite.renderOrder = 999;
+            return sprite;
+        }
+
+        function update3DMeasurements() {
+            measurementSprites.forEach(s => scene.remove(s)); measurementSprites = [];
+            if (objects.length <= 1) return;
+
+            const blockMap = new Map();
+            for (let i = 1; i < objects.length; i++) {
+                const b = objects[i];
+                const key = `${b.gridX},${b.gridY},${b.gridZ}`;
+                blockMap.set(key, b);
+            }
+
+            const processedX = new Set(); const processedZ = new Set(); const processedY = new Set();
+
+            for (let i = 1; i < objects.length; i++) {
+                const b = objects[i];
+                const px = b.gridX; const py = b.gridY; const pz = b.gridZ;
+                const key = `${px},${py},${pz}`;
+
+                // Longueur Horizon X (Bleu) - CENTRÉ
+                if (!processedX.has(key) && !blockMap.has(`${px-1},${py},${pz}`)) {
+                    let lenX = 1;
+                    while (blockMap.has(`${px+lenX},${py},${pz}`)) {
+                        processedX.add(`${px+lenX},${py},${pz}`); lenX++;
+                    }
+                    if (lenX > 1) {
+                        const sprite = createTextSprite(lenX.toString(), "#4dabf7"); 
+                        // On place le texte exactement au centre mathématique de la ligne X
+                        sprite.position.set(px + (lenX / 2), py + 1.2, pz + 0.5);
+                        scene.add(sprite); measurementSprites.push(sprite);
+                    }
+                }
+
+                // Longueur Horizon Z (Bleu) - CENTRÉ
+                if (!processedZ.has(key) && !blockMap.has(`${px},${py},${pz-1}`)) {
+                    let lenZ = 1;
+                    while (blockMap.has(`${px},${py},${pz+lenZ}`)) {
+                        processedZ.add(`${px},${py},${pz+lenZ}`); lenZ++;
+                    }
+                    if (lenZ > 1) {
+                        const sprite = createTextSprite(lenZ.toString(), "#4dabf7");
+                        // On place le texte exactement au centre mathématique de la ligne Z
+                        sprite.position.set(px + 0.5, py + 1.2, pz + (lenZ / 2));
+                        scene.add(sprite); measurementSprites.push(sprite);
+                    }
+                }
+
+                // Hauteur Verticale Y (Rouge) - CENTRÉ
+                if (!processedY.has(key) && !blockMap.has(`${px},${py-1},${pz}`)) {
+                    let lenY = 1;
+                    while (blockMap.has(`${px},${py+lenY},${pz}`)) {
+                        processedY.add(`${px},${py+lenY},${pz}`); lenY++;
+                    }
+                    if (lenY > 1) {
+                        const sprite = createTextSprite(lenY.toString(), "#ff6b6b"); 
+                        // On place le texte à mi-hauteur sur l'axe Y
+                        sprite.position.set(px + 1.2, py + (lenY / 2) + 0.5, pz + 0.5);
+                        scene.add(sprite); measurementSprites.push(sprite);
+                    }
+                }
+            }
+        }
+
+        // --- GESTION FORMES ET BLOCS ---
         function createGeometryForType(type, isForPreview = false) {
             let activeMat = isForPreview ? previewMaterial : materials[type];
             if (type === 'slab') return new THREE.BoxGeometry(1, 0.5, 1);
-            if (type === 'fence') return new THREE.BoxGeometry(0.2, 1, 0.2);
-            if (type === 'door') return new THREE.BoxGeometry(0.9, 1.8, 0.12);
+            if (type === 'fence') return new THREE.BoxGeometry(0.22, 1, 0.22);
+            if (type === 'door') return new THREE.BoxGeometry(0.85, 1.8, 0.12);
             if (type === 'stairs') {
                 const groupGeom = new THREE.Group();
                 const base = new THREE.Mesh(new THREE.BoxGeometry(1, 0.5, 1), activeMat); base.position.y = -0.25;
@@ -333,70 +496,54 @@
             if (floorPlane) scene.remove(floorPlane);
             const style = platformStyles[currentPlatformStyle];
             scene.background = new THREE.Color(style.skyColor);
+            
             document.getElementById('hud-platform').innerText = style.name;
             document.getElementById('hud-plot-size').innerText = `${size}x${size}`;
             
-            gridHelper = new THREE.GridHelper(size, size, 0x000000, 0x333333);
+            gridHelper = new THREE.GridHelper(size, size, 0xffffff, 0xffffff);
+            gridHelper.material.opacity = 0.12; gridHelper.material.transparent = true;
             gridHelper.position.set(size / 2, 0.01, size / 2); scene.add(gridHelper);
             
-            floorPlane = new THREE.Mesh(new THREE.BoxGeometry(size, 1, size), new THREE.MeshStandardMaterial({ color: style.floorColor, roughness: 0.9 }));
+            floorPlane = new THREE.Mesh(new THREE.BoxGeometry(size, 1, size), new THREE.MeshStandardMaterial({ color: style.floorColor, roughness: 1 }));
             floorPlane.position.set(size / 2, -0.5, size / 2); scene.add(floorPlane);
             
             if(objects.length === 0) objects.push(floorPlane); else objects[0] = floorPlane; 
             controls.target.set(size / 2, 0, size / 2); controls.update();
             updatePreviewMesh();
-            updateDimensionsHUD();
-
-            document.querySelectorAll('.plots-list .mc-btn').forEach(btn => btn.classList.remove('active-mode'));
-            const activeBtn = document.getElementById(`plot-${size}`);
-            if (activeBtn) activeBtn.classList.add('active-mode');
+            update3DMeasurements();
         }
 
-        function togglePlotModal(show) { document.getElementById('plot-modal').style.display = show ? 'block' : 'none'; }
-        function openPlotModal() { togglePlotModal(true); }
-        function selectPlotSizeStage(size) { stagedPlotSize = size; document.querySelectorAll('.plots-list .mc-btn').forEach(btn => btn.style.borderColor = ''); const tgt = document.getElementById(`plot-${size}`); if(tgt) tgt.style.borderColor = '#fff'; }
-        function confirmPlotSize() { currentPlotSize = stagedPlotSize; clearAllBlocks(); updateWorldPlot(currentPlotSize); togglePlotModal(false); }
-        function togglePlatformModal(show) { document.getElementById('platform-modal').style.display = show ? 'block' : 'none'; }
-        function openPlatformModal() { togglePlatformModal(true); }
-        function changePlatformType(type) { currentPlatformStyle = type; updateWorldPlot(currentPlotSize); togglePlatformModal(false); }
+        // --- GESTION INTERFACE MOUSE / WINDOW ---
+        function toggleModal(id, show) { document.getElementById(id).style.display = show ? 'block' : 'none'; }
+        function openPlotModal() { toggleModal('plot-modal', true); }
+        function openPlatformModal() { toggleModal('platform-modal', true); }
+        
+        function selectPlotSizeStage(size) { stagedPlotSize = size; }
+        function confirmPlotSize() { currentPlotSize = stagedPlotSize; clearAllBlocks(); updateWorldPlot(currentPlotSize); toggleModal('plot-modal', false); }
+        function changePlatformType(type) { currentPlatformStyle = type; updateWorldPlot(currentPlotSize); toggleModal('platform-modal', false); }
 
         function navigateTo(pageId) {
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(`page-${pageId}`).classList.add('active');
-            if (pageId === 'game') setTimeout(() => { onWindowResize(); updateWorldPlot(currentPlotSize); }, 50);
-        }
-
-        function setMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('.top-bar .mc-btn').forEach(btn => btn.classList.remove('active-mode'));
-            document.getElementById(`btn-mode-${mode}`).classList.add('active-mode');
-            updatePreviewMesh();
+            if (pageId === 'game') setTimeout(() => { onWindowResize(); updateWorldPlot(currentPlotSize); renderHotbarIcons(); }, 50);
         }
 
         function selectBlock(type) {
             selectedBlockType = type;
             document.querySelectorAll('.hotbar .slot').forEach(slot => slot.classList.remove('selected'));
             document.getElementById(`slot-${type}`).classList.add('selected');
-            if(currentMode === 'cam') setMode('build');
             updatePreviewMesh();
         }
 
         function handlePointerMoveLogic(clientX, clientY) {
             if (currentMode !== 'build' || !previewMesh) return;
-            const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((clientX - rect.left) / renderer.domElement.clientWidth) * 2 - 1;
-            mouse.y = -((clientY - rect.top) / renderer.domElement.clientHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(objects, true);
-            if (intersects.length > 0) {
-                const intersect = intersects[0];
+            const intersect = getIntersectedBlock({clientX, clientY});
+            if (intersect) {
                 const targetPosition = new THREE.Vector3().copy(intersect.point).add(intersect.face.normal.clone().multiplyScalar(0.5));
                 let gridOffsetY = 0.5;
                 if (selectedBlockType === 'slab') gridOffsetY = 0.25;
                 if (selectedBlockType === 'door') gridOffsetY = 0.9;
-                previewMesh.position.x = Math.floor(targetPosition.x) + 0.5;
-                previewMesh.position.y = Math.floor(targetPosition.y) + gridOffsetY + freeHeightOffset;
-                previewMesh.position.z = Math.floor(targetPosition.z) + 0.5;
+                previewMesh.position.set(Math.floor(targetPosition.x) + 0.5, Math.floor(targetPosition.y) + gridOffsetY + freeHeightOffset, Math.floor(targetPosition.z) + 0.5);
                 previewMesh.visible = true;
             } else {
                 previewMesh.visible = false;
@@ -407,49 +554,39 @@
         window.addEventListener('pointermove', function(event) { lastMoveEvent = event; handlePointerMoveLogic(event.clientX, event.clientY); });
 
         window.addEventListener('pointerdown', function(event) {
-            if (event.button === 1 || currentMode === 'cam') return;
-            const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((event.clientX - rect.left) / renderer.domElement.clientWidth) * 2 - 1;
-            mouse.y = -((event.clientY - rect.top) / renderer.domElement.clientHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(objects, true);
+            if (event.button === 1) return;
+            const intersect = getIntersectedBlock(event);
 
-            if (intersects.length > 0) {
-                const intersect = intersects[0];
-                if (event.button === 2) {
+            if (intersect) {
+                if (event.button === 2) { 
                     if (intersect.object !== floorPlane) {
                         let hitObject = intersect.object;
                         while (hitObject.parent && hitObject.parent !== scene) { hitObject = hitObject.parent; }
                         scene.remove(hitObject);
                         const idx = objects.indexOf(hitObject); if (idx > -1) objects.splice(idx, 1);
                         document.getElementById('total-blocks-count').innerText = objects.length - 1;
-                        updateDimensionsHUD();
+                        update3DMeasurements();
                     }
                     return;
                 }
-                if (event.button === 0) {
-                    if (currentMode === 'build') {
-                        let geom = createGeometryForType(selectedBlockType);
-                        let block = (selectedBlockType === 'stairs') ? geom : new THREE.Mesh(geom, materials[selectedBlockType]);
-                        block.nameType = selectedBlockType; block.rotation.y = currentRotationState * (Math.PI / 2);
-                        const targetPosition = new THREE.Vector3().copy(intersect.point).add(intersect.face.normal.clone().multiplyScalar(0.5));
-                        let gridOffsetY = 0.5;
-                        if (selectedBlockType === 'slab') gridOffsetY = 0.25;
-                        if (selectedBlockType === 'door') gridOffsetY = 0.9;
-                        block.position.x = Math.floor(targetPosition.x) + 0.5;
-                        block.position.y = Math.floor(targetPosition.y) + gridOffsetY + freeHeightOffset;
-                        block.position.z = Math.floor(targetPosition.z) + 0.5;
-                        scene.add(block); objects.push(block);
-                        document.getElementById('total-blocks-count').innerText = objects.length - 1;
-                        updateDimensionsHUD();
-                    } else if (currentMode === 'delete' && intersect.object !== floorPlane) {
-                        let hitObject = intersect.object;
-                        while (hitObject.parent && hitObject.parent !== scene) { hitObject = hitObject.parent; }
-                        scene.remove(hitObject);
-                        const idx = objects.indexOf(hitObject); if (idx > -1) objects.splice(idx, 1);
-                        document.getElementById('total-blocks-count').innerText = objects.length - 1;
-                        updateDimensionsHUD();
-                    }
+                if (event.button === 0) { 
+                    let geom = createGeometryForType(selectedBlockType);
+                    let block = (selectedBlockType === 'stairs') ? geom : new THREE.Mesh(geom, materials[selectedBlockType]);
+                    block.nameType = selectedBlockType; block.rotation.y = currentRotationState * (Math.PI / 2);
+                    
+                    const targetPosition = new THREE.Vector3().copy(intersect.point).add(intersect.face.normal.clone().multiplyScalar(0.5));
+                    let gridOffsetY = 0.5;
+                    if (selectedBlockType === 'slab') gridOffsetY = 0.25;
+                    if (selectedBlockType === 'door') gridOffsetY = 0.9;
+                    
+                    block.gridX = Math.floor(targetPosition.x);
+                    block.gridY = Math.floor(targetPosition.y) + freeHeightOffset;
+                    block.gridZ = Math.floor(targetPosition.z);
+
+                    block.position.set(block.gridX + 0.5, Math.floor(targetPosition.y) + gridOffsetY + freeHeightOffset, block.gridZ + 0.5);
+                    scene.add(block); objects.push(block);
+                    document.getElementById('total-blocks-count').innerText = objects.length - 1;
+                    update3DMeasurements();
                 }
             }
         });
@@ -458,34 +595,38 @@
             while(objects.length > 1) scene.remove(objects.pop());
             document.getElementById('total-blocks-count').innerText = 0;
             freeHeightOffset = 0; document.getElementById('hud-height-offset').innerText = freeHeightOffset;
-            updateDimensionsHUD();
+            update3DMeasurements();
         }
 
+        // --- PIPELINE SAUVEGARDE / CHARGEMENT LOCAL ---
         function triggerMinecraftLoading(actionType) {
             const screen = document.getElementById('loading-screen');
             const title = document.getElementById('loading-title-text');
             const fill = document.getElementById('loading-bar-fill');
             const status = document.getElementById('loading-status-text');
             fill.style.width = '0%'; screen.style.display = 'flex';
-            if (actionType === 'save') { title.innerText = "SAUVEGARDE EN COURS..."; status.innerText = "Calcul des blocs..."; } else { title.innerText = "CHARGEMENT EN COURS..."; status.innerText = "Lecture locale..."; }
+            
+            if (actionType === 'save') { title.innerText = "SAUVEGARDE..."; status.innerText = "Chiffrement de la structure..."; } 
+            else { title.innerText = "CHARGEMENT..."; status.innerText = "Génération de l'environnement..."; }
+            
             let progress = 0;
             const interval = setInterval(() => {
-                progress += Math.floor(Math.random() * 15) + 5;
+                progress += Math.floor(Math.random() * 25) + 15;
                 if (progress >= 100) {
                     progress = 100; clearInterval(interval);
-                    if (actionType === 'save') { saveProjectAction(); status.innerText = "Projet sauvegardé !"; } else { loadProjectAction(); status.innerText = "Projet chargé !"; }
-                    setTimeout(() => { screen.style.display = 'none'; }, 1200);
+                    if (actionType === 'save') { saveProjectAction(); status.innerText = "Sauvegarde terminée !"; } 
+                    else { loadProjectAction(); status.innerText = "Monde généré !"; }
+                    setTimeout(() => { screen.style.display = 'none'; }, 600);
                 }
                 fill.style.width = progress + '%';
-                if (progress > 35 && progress < 75) { status.innerText = actionType === 'save' ? "Écriture du fichier NBT..." : "Rendu des chunks 3D..."; }
-            }, 100);
+            }, 800);
         }
 
         function saveProjectAction() {
             const saveObject = { style: currentPlatformStyle, plotSize: currentPlotSize, blocks: [] };
             for (let i = 1; i < objects.length; i++) {
                 const b = objects[i];
-                saveObject.blocks.push({ x: b.position.x, y: b.position.y, z: b.position.z, rot: b.rotation.y, type: b.nameType });
+                saveObject.blocks.push({ x: b.position.x, y: b.position.y, z: b.position.z, gx: b.gridX, gy: b.gridY, gz: b.gridZ, rot: b.rotation.y, type: b.nameType });
             }
             localStorage.setItem('minecraft_complete_save', JSON.stringify(saveObject));
         }
@@ -499,18 +640,23 @@
                 let geom = createGeometryForType(data.type);
                 let block = (data.type === 'stairs') ? geom : new THREE.Mesh(geom, materials[data.type]);
                 block.nameType = data.type; block.position.set(data.x, data.y, data.z); block.rotation.y = data.rot || 0;
+                block.gridX = data.gx !== undefined ? data.gx : Math.floor(data.x);
+                block.gridY = data.gy !== undefined ? data.gy : Math.floor(data.y);
+                block.gridZ = data.gz !== undefined ? data.gz : Math.floor(data.z);
                 scene.add(block); objects.push(block);
             });
             document.getElementById('total-blocks-count').innerText = objects.length - 1;
-            updateDimensionsHUD();
+            update3DMeasurements();
         }
 
+        // --- EXECUTION PRINCIPALE ---
         document.oncontextmenu = function(e) { e.preventDefault(); }
         function onWindowResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
         window.addEventListener('resize', onWindowResize);
 
         function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
         updateWorldPlot(currentPlotSize);
+        renderHotbarIcons();
         animate();
     </script>
 </body>
